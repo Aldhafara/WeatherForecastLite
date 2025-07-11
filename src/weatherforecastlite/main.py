@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict
 
 import requests
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
 
@@ -35,24 +35,36 @@ def get_period(dt):
     return f"{start}/{end}"
 
 def parse_night_data(raw_data) -> List[Dict]:
-    hours = raw_data["hourly"]["time"]
-    clouds = raw_data["hourly"]["cloudcover"]
-    temps = raw_data["hourly"]["temperature_2m"]
+    try:
+        hours = raw_data["hourly"]["time"]
+        clouds = raw_data["hourly"]["cloudcover"]
+        temps = raw_data["hourly"]["temperature_2m"]
+    except KeyError as e:
+        print(f"Data unavailable in external API: {e}")
+        return []
     night_hours = get_night_hours()
     grouped = {}
     for i, hour_str in enumerate(hours):
-        dt = datetime.fromisoformat(hour_str)
+        try:
+            dt = datetime.fromisoformat(hour_str)
+            temp = temps[i]
+            cloud = clouds[i]
+        except (IndexError, ValueError) as e:
+            print(f"Data error for hour {hour_str}: {e}")
+            continue
+
         if dt.hour in night_hours:
             period = get_period(dt)
             grouped.setdefault(period, []).append({
-                "timestamp":add_unix_timestamp(dt.strftime("%H:%M"), dt.date()),
+                "timestamp": add_unix_timestamp(dt.strftime("%H:%M"), dt.date()),
                 "hour": dt.strftime("%H:%M"),
-                "temperature": temps[i],
-                "cloudcover": clouds[i]
+                "temperature": temp,
+                "cloudcover": cloud
             })
+
     return [
         {"period": period, "hours": hours}
-        for period, hours in grouped.items()
+        for period, hours in grouped.items() if hours
     ]
 
 @app.get("/forecast")
@@ -61,17 +73,28 @@ def forecast(
     longitude: float = 21.008333,
     timezone: str = "Europe/Warsaw"
 ):
-    raw = fetch_weather_data(latitude, longitude, timezone)
-    night_data = parse_night_data(raw)
-    result = {
-        "latitude": latitude,
-        "longitude": longitude,
-        "generationtime_ms": raw.get("generationtime_ms"),
-        "utc_offset_seconds": raw.get("utc_offset_seconds"),
-        "timezone": raw.get("timezone"),
-        "timezone_abbreviation": raw.get("timezone_abbreviation"),
-        "elevation": raw.get("elevation"),
-        "hourly_units": raw.get("hourly_units"),
-        "data": night_data
-    }
-    return result
+    try:
+        raw = fetch_weather_data(latitude, longitude, timezone)
+        night_data = parse_night_data(raw)
+        result = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "generationtime_ms": raw.get("generationtime_ms"),
+            "utc_offset_seconds": raw.get("utc_offset_seconds"),
+            "timezone": raw.get("timezone"),
+            "timezone_abbreviation": raw.get("timezone_abbreviation"),
+            "elevation": raw.get("elevation"),
+            "hourly_units": raw.get("hourly_units"),
+            "data": night_data
+        }
+        return result
+    except Exception as e:
+        print(f"Error fetching weather data: {e}")
+
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "message": "Weather data unavailable. External API did not respond.",
+                "error": str(e)
+            }
+        )
