@@ -4,7 +4,7 @@ Minimalist service for fetching nighttime cloud cover and temperature forecasts.
 
 ## Features
  - Fetches cloud cover (%) and temperature for nighttime hours
- - Fast, simple API (in progress)
+ - Fast, simple API
  - Easy to extend – no feature bloat
 
 ## How to run
@@ -38,9 +38,9 @@ python src/weatherforecastlite/main.py
  ## Project status
  - [x] Initial skeleton
  - [x] Basic weather fetcher
- - [ ]  Nighttime data parser
- - [ ] Simple API (Flask/FastAPI)
- - [ ] Tests
- 
+ - [x]  Nighttime data parser
+ - [x] Simple API (Flask/FastAPI)
+ - [x] Tests
+
  ## License
  MIT
