@@ -13,7 +13,8 @@ def fetch_weather_data(lat, lon, timezone):
     url = (
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
-        f"&hourly=cloudcover,temperature_2m"
+        f"&hourly=cloudcover,temperature_2m,visibility,windspeed_10m,windgusts_10m"
+        f"&windspeed_unit=ms"
         f"&timezone={timezone}"
     )
     response = requests.get(url)
@@ -39,6 +40,9 @@ def parse_night_data(raw_data) -> List[Dict]:
         hours = raw_data["hourly"]["time"]
         clouds = raw_data["hourly"]["cloudcover"]
         temps = raw_data["hourly"]["temperature_2m"]
+        visibilities = raw_data["hourly"]["visibility"]
+        windspeeds = raw_data["hourly"]["windspeed_10m"]
+        windgusts = raw_data["hourly"]["windgusts_10m"]
     except KeyError as e:
         print(f"Data unavailable in external API: {e}")
         return []
@@ -49,6 +53,9 @@ def parse_night_data(raw_data) -> List[Dict]:
             dt = datetime.fromisoformat(hour_str)
             temp = temps[i]
             cloud = clouds[i]
+            visibility = visibilities[i]
+            windspeed = windspeeds[i]
+            windgust  = windgusts[i]
         except (IndexError, ValueError) as e:
             print(f"Data error for hour {hour_str}: {e}")
             continue
@@ -59,7 +66,10 @@ def parse_night_data(raw_data) -> List[Dict]:
                 "timestamp": add_unix_timestamp(dt.strftime("%H:%M"), dt.date()),
                 "hour": dt.strftime("%H:%M"),
                 "temperature": temp,
-                "cloudcover": cloud
+                "cloudcover": cloud,
+                "visibility": visibility,
+                "windspeed": windspeed,
+                "windgust": windgust
             })
 
     return [

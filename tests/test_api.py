@@ -15,12 +15,18 @@ def test_forecast_endpoint(mock_fetch):
         "hourly_units": {
             "time": "iso8601",
             "cloudcover": "%",
-            "temperature_2m": "°C"
+            "temperature_2m": "°C",
+            "visibility":"m",
+            "windspeed_10m":"m/s",
+            "windgusts_10m":"m/s"
         },
         "hourly": {
             "time": ["2025-07-11T21:00"],
             "cloudcover": [10],
-            "temperature_2m": [15.0]
+            "temperature_2m": [15.0],
+            "visibility":[16720.0],
+            "windspeed_10m":[4.7],
+            "windgusts_10m":[8.9]
         }
     }
     mock_fetch.return_value = mock_response
