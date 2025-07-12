@@ -138,11 +138,11 @@ GET /forecast?latitude=50.06143&longitude=19.93658&timezone=Europe/Krakow
 
 - `timezone`, `timezone_abbreviation`, `utc_offset_seconds` - timezone information for the forecast:
 
----  `timezone`: full timezone name (e.g., `Europe/Warsaw`)
+  -  `timezone`: full timezone name (e.g., `Europe/Warsaw`)
 
----  `timezone_abbreviation`: abbreviated timezone (e.g., `GMT+2`)
+  -  `timezone_abbreviation`: abbreviated timezone (e.g., `GMT+2`)
 
----  `utc_offset_seconds`: offset from UTC in seconds
+  -  `utc_offset_seconds`: offset from UTC in seconds
 
 - `elevation` - elevation of the forecast location above sea level (meters)
 
