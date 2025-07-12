@@ -10,7 +10,7 @@ AstroSpotFinder - just the essentials for planning stargazing sessions.
 - [Features](#features)
 - [How to run](#how-to-run)
 - [Project status](#project-status)
-- [API – Request Parameters](#api-request-parameters)
+- [API - Request Parameters](#api-request-parameters)
 - [API Response Format](#api-response-format)
 - [Example Usage](#example-usage)
 - [How to test](#how-to-test)
@@ -20,7 +20,7 @@ AstroSpotFinder - just the essentials for planning stargazing sessions.
 
 - Fetches cloud cover (%) and temperature for nighttime hours
 - Fast, simple API
-- Easy to extend – no feature bloat
+- Easy to extend - no feature bloat
 
 ## How to run
 
@@ -111,6 +111,7 @@ GET /forecast?latitude=50.06143&longitude=19.93658&timezone=Europe/Krakow
  "data": [
   {
    "period": "2025-07-11/2025-07-12",
+   "moon_illumination":0.41,
    "hours": [
     {
      "timestamp": 1752267600,
@@ -131,11 +132,11 @@ GET /forecast?latitude=50.06143&longitude=19.93658&timezone=Europe/Krakow
 
 **Description of key fields:**
 
-- `latitude`, `longitude` – geographic coordinates of the forecast location (decimal degrees)
+- `latitude`, `longitude` - geographic coordinates of the forecast location (decimal degrees)
 
-- `generationtime_ms` – time taken to generate the API response, in milliseconds
+- `generationtime_ms` - time taken to generate the API response, in milliseconds
 
-- `timezone`, `timezone_abbreviation`, `utc_offset_seconds` – timezone information for the forecast:
+- `timezone`, `timezone_abbreviation`, `utc_offset_seconds` - timezone information for the forecast:
 
 ---  `timezone`: full timezone name (e.g., `Europe/Warsaw`)
 
@@ -143,30 +144,32 @@ GET /forecast?latitude=50.06143&longitude=19.93658&timezone=Europe/Krakow
 
 ---  `utc_offset_seconds`: offset from UTC in seconds
 
-- `elevation` – elevation of the forecast location above sea level (meters)
+- `elevation` - elevation of the forecast location above sea level (meters)
 
-- `hourly_units` – dictionary specifying the units for each weather parameter (e.g., `"temperature_2m": "°C"`,
+- `hourly_units` - dictionary specifying the units for each weather parameter (e.g., `"temperature_2m": "°C"`,
  `"windspeed_10m": "m/s"`)
 
-- `data` – an array of objects, each representing a single night (from sunset to sunrise)
+- `data` - an array of objects, each representing a single night (from sunset to sunrise)
 
-  - `period` – date range for the night, formatted as `"YYYY-MM-DD/YYYY-MM-DD"` (e.g., `"2025-07-11/2025-07-12"`)
+  - `period` - date range for the night, formatted as `"YYYY-MM-DD/YYYY-MM-DD"` (e.g., `"2025-07-11/2025-07-12"`)
 
-  - `hours` – array of hourly forecast entries for the night. Each entry contains:
+  - `moon_illumination` - fraction of the Moon’s disk illuminated (value between 0 and 1, where 0 means new moon and 1 means full moon), value is calculated for 01:00 each night period
 
-    - `timestamp` – timestamp (Unix)
+  - `hours` - array of hourly forecast entries for the night. Each entry contains:
 
-    - `hour` – hour as HH:MM (24-hour format)
+    - `timestamp` - timestamp (Unix)
 
-    - `temperature` – air temperature at 2 meters above ground (unit: °C)
+    - `hour` - hour as HH:MM (24-hour format)
 
-    - `cloudcover` – cloud cover[%]
+    - `temperature` - air temperature at 2 meters above ground (unit: °C)
 
-    - `visibility` – widoczność [m]
+    - `cloudcover` - cloud cover[%]
 
-    - `windspeed` – wind speed at 10 meters above ground (unit: m/s)
+    - `visibility` - widoczność [m]
 
-    - `windgust` – wind gust speed at 10 meters above ground (unit: m/s)
+    - `windspeed` - wind speed at 10 meters above ground (unit: m/s)
+
+    - `windgust` - wind gust speed at 10 meters above ground (unit: m/s)
 
 ## Example Usage
 
