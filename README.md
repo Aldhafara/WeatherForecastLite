@@ -1,5 +1,7 @@
 # WeatherForecastLite
 
+![Build Status](https://github.com/Aldhafara/WeatherForecastLite/actions/workflows/python-tests.yml/badge.svg)
+
 Minimalist service for fetching nighttime cloud cover and temperature forecasts. Created as a lightweight helper for
 AstroSpotFinder - just the essentials for planning stargazing sessions.
 
