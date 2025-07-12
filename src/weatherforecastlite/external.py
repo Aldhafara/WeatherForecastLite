@@ -4,6 +4,7 @@ from fastapi import Query
 from cachetools import TTLCache, cached
 from .logging_config import logger
 from functools import wraps
+from concurrent.futures import ThreadPoolExecutor
 
 weather_cache = TTLCache(maxsize=128, ttl=3600)  # 1h
 moon_phase_cache = TTLCache(maxsize=128, ttl=86400)  # 24h
@@ -66,3 +67,8 @@ def fetch_weather_data(lat, lon, timezone):
     logger.info(f"Open-Meteo API call took {duration:.3f}s")
     response.raise_for_status()
     return response.json()
+
+def batch_get_moon_illumination(timestamps):
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(get_moon_illumination, timestamps))
+    return results

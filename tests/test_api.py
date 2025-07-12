@@ -28,7 +28,7 @@ MOCK_WEATHER_RESPONSE = {
         }
     }
 
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=False)
 
 @patch("weatherforecastlite.main.fetch_weather_data")
 def test_forecast_endpoint(mock_fetch):
@@ -51,7 +51,7 @@ def test_forecast_endpoint_error(mock_fetch):
     data = response.json()
     assert data["detail"]["message"] == "Weather data unavailable. External weather API did not respond."
 
-@patch("weatherforecastlite.main.get_moon_illumination", side_effect=Exception("Moon API error"))
+@patch("weatherforecastlite.external.get_moon_illumination", side_effect=Exception("Moon API error"))
 @patch("weatherforecastlite.main.fetch_weather_data")
 def test_forecast_moon_api_error(mock_fetch, mock_moon):
     mock_fetch.return_value = MOCK_WEATHER_RESPONSE

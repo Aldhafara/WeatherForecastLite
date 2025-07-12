@@ -4,7 +4,7 @@ from fastapi import FastAPI, Query, HTTPException, Request
 from typing import List, Dict
 from .logging_config import logger
 from .utils import get_night_hours, add_unix_timestamp, get_period
-from .external import fetch_weather_data, get_moon_illumination, log_cache, weather_cache, moon_phase_cache
+from .external import fetch_weather_data, batch_get_moon_illumination, get_moon_illumination, log_cache, weather_cache, moon_phase_cache
 
 app = FastAPI()
 
@@ -53,9 +53,14 @@ def parse_night_data(raw_data) -> List[Dict]:
                 "windgust": windgust,
             })
     result = []
+    moon_timestamps = []
+    periods = []
     for period, hours in grouped.items():
         moon_hour = next((h for h in hours if h["hour"] == "01:00"), hours[0])
-        moon_illumination = get_moon_illumination(moon_hour["timestamp"])
+        moon_timestamps.append(moon_hour["timestamp"])
+        periods.append((period, hours))
+    moon_illuminations = batch_get_moon_illumination(moon_timestamps)
+    for (period, hours), moon_illumination in zip(periods, moon_illuminations):
         result.append({
             "period": period,
             "moon_illumination": moon_illumination,
