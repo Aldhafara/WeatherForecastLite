@@ -2,18 +2,24 @@ import requests
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException
 from typing import List, Dict
+from cachetools import TTLCache, cached
+
+weather_cache = TTLCache(maxsize=128, ttl=3600)  # 1h
+moon_phase_cache = TTLCache(maxsize=128, ttl=86400)  # 24h
 
 app = FastAPI()
 
 def get_night_hours():
     return list(range(21, 24)) + list(range(0, 7))
 
+@cached(moon_phase_cache)
 def get_moon_illumination(timestamp):
     url = f"https://api.farmsense.net/v1/moonphases/?d={timestamp}"
     resp = requests.get(url)
     data = resp.json()
     return data[0]["Illumination"]
 
+@cached(weather_cache)
 def fetch_weather_data(lat, lon, timezone):
     url = (
         f"https://api.open-meteo.com/v1/forecast"
