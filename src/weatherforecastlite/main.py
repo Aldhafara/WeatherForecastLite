@@ -5,8 +5,11 @@ from typing import List, Dict
 from .logging_config import logger
 from .utils import get_night_hours, add_unix_timestamp, get_period
 from .external import fetch_weather_data, batch_get_moon_illumination, get_moon_illumination, log_cache, weather_cache, moon_phase_cache
+from .rate_limit_config import limiter, rate_limit_handler
 
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(*rate_limit_handler)
 
 @app.middleware("http")
 async def log_request_time(request: Request, call_next):
@@ -69,7 +72,9 @@ def parse_night_data(raw_data) -> List[Dict]:
     return result
 
 @app.get("/forecast")
+@limiter.limit("20/minute")
 def forecast(
+    request: Request,
     latitude: float = Query(52.232222, ge=-90, le=90, description="Latitude (-90 to 90)"),
     longitude: float = Query(21.008333, ge=-180, le=180, description="Longitude (-180 to 180)"),
     timezone: str = Query("Europe/Warsaw", description="Timezone, e.g. Europe/Warsaw")
