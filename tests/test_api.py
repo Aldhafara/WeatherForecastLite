@@ -1,6 +1,8 @@
+import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 from weatherforecastlite.main import app
+from weatherforecastlite.external import get_moon_illumination
 
 MOCK_WEATHER_RESPONSE = {
         "generationtime_ms": 0.1,
@@ -57,3 +59,32 @@ def test_forecast_moon_api_error(mock_fetch, mock_moon):
     assert response.status_code == 503
     data = response.json()
     assert data["detail"]["message"] == "Night data unavailable. External moon phase API did not respond or data parsing failed."
+
+def test_forecast_latitude_out_of_range():
+    response = client.get("/forecast?latitude=100.0&longitude=19.0")
+    assert response.status_code == 422
+    data = response.json()
+    error = data["detail"][0]
+    assert "Input should be less than or equal to 90" in error["msg"]
+
+def test_forecast_longitude_out_of_range():
+    response = client.get("/forecast?latitude=50.0&longitude=200.0")
+    assert response.status_code == 422
+    data = response.json()
+    error = data["detail"][0]
+    assert "Input should be less than or equal to 180" in error["msg"]
+
+def test_forecast_invalid_latitude_type():
+    response = client.get("/forecast?latitude=foo&longitude=19.0")
+    assert response.status_code == 422
+    data = response.json()
+    error = data["detail"][0]
+    assert "Input should be a valid number, unable to parse string as a number" in error["msg"]
+
+def test_get_moon_illumination_negative_timestamp():
+    with pytest.raises(ValueError, match="Timestamp must be a positive integer"):
+        get_moon_illumination(-123)
+
+def test_get_moon_illumination_timestamp_from_far_future():
+    with pytest.raises(ValueError, match=r"Timestamp out of reasonable range.*9999"):
+        get_moon_illumination(9999999999999999)

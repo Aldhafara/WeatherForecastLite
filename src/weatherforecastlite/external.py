@@ -1,5 +1,6 @@
 import requests
 import time
+from fastapi import Query
 from cachetools import TTLCache, cached
 from .logging_config import logger
 from functools import wraps
@@ -22,7 +23,21 @@ def log_cache(cache, name="cache"):
 
 @log_cache(moon_phase_cache, name="moon_illumination")
 @cached(moon_phase_cache)
-def get_moon_illumination(timestamp):
+def get_moon_illumination(
+    timestamp: int = Query(..., description="Unix timestamp (required)")
+):
+    try:
+        ts = int(timestamp)
+    except (TypeError, ValueError):
+        logger.error(f"Invalid timestamp type: {timestamp}")
+        raise ValueError("Timestamp must be an integer.")
+    if ts < 0:
+        logger.error(f"Negative timestamp: {timestamp}")
+        raise ValueError("Timestamp must be a positive integer.")
+    now = int(time.time())
+    if ts > now + 10 * 365 * 24 * 3600:
+        logger.warning(f"Timestamp out of reasonable range: {timestamp}")
+        raise ValueError(f"Timestamp out of reasonable range: {timestamp}")
     try:
         url = f"https://api.farmsense.net/v1/moonphases/?d={timestamp}"
         start = time.time()

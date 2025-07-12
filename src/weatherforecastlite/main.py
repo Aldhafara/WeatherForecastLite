@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Query, HTTPException, Request
 from typing import List, Dict
 from .logging_config import logger
 from .utils import get_night_hours, add_unix_timestamp, get_period
@@ -65,9 +65,9 @@ def parse_night_data(raw_data) -> List[Dict]:
 
 @app.get("/forecast")
 def forecast(
-    latitude: float = 52.232222,
-    longitude: float = 21.008333,
-    timezone: str = "Europe/Warsaw"
+    latitude: float = Query(52.232222, ge=-90, le=90, description="Latitude (-90 to 90)"),
+    longitude: float = Query(21.008333, ge=-180, le=180, description="Longitude (-180 to 180)"),
+    timezone: str = Query("Europe/Warsaw", description="Timezone, e.g. Europe/Warsaw")
 ):
     try:
         try:
