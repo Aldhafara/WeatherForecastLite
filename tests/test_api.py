@@ -2,11 +2,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 from weatherforecastlite.main import app
 
-client = TestClient(app)
-
-@patch("weatherforecastlite.main.fetch_weather_data")
-def test_forecast_endpoint(mock_fetch):
-    mock_response = {
+MOCK_WEATHER_RESPONSE = {
         "generationtime_ms": 0.1,
         "utc_offset_seconds": 7200,
         "timezone": "Europe/Warsaw",
@@ -29,6 +25,12 @@ def test_forecast_endpoint(mock_fetch):
             "windgusts_10m":[8.9]
         }
     }
+
+client = TestClient(app)
+
+@patch("weatherforecastlite.main.fetch_weather_data")
+def test_forecast_endpoint(mock_fetch):
+    mock_response = MOCK_WEATHER_RESPONSE
     mock_fetch.return_value = mock_response
 
     response = client.get("/forecast")
@@ -40,9 +42,18 @@ def test_forecast_endpoint(mock_fetch):
     assert len(data["data"]) == 1
     assert data["data"][0]["period"] == "2025-07-11/2025-07-12"
 
-@patch("weatherforecastlite.main.fetch_weather_data", side_effect=Exception("API error"))
+@patch("weatherforecastlite.main.fetch_weather_data", side_effect=Exception("Weather API error"))
 def test_forecast_endpoint_error(mock_fetch):
     response = client.get("/forecast")
     assert response.status_code == 503
     data = response.json()
-    assert data["detail"]["message"] == "Weather data unavailable. External API did not respond."
+    assert data["detail"]["message"] == "Weather data unavailable. External weather API did not respond."
+
+@patch("weatherforecastlite.main.get_moon_illumination", side_effect=Exception("Moon API error"))
+@patch("weatherforecastlite.main.fetch_weather_data")
+def test_forecast_moon_api_error(mock_fetch, mock_moon):
+    mock_fetch.return_value = MOCK_WEATHER_RESPONSE
+    response = client.get("/forecast")
+    assert response.status_code == 503
+    data = response.json()
+    assert data["detail"]["message"] == "Night data unavailable. External moon phase API did not respond or data parsing failed."

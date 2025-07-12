@@ -1,13 +1,18 @@
-from datetime import datetime, timedelta
-from typing import List, Dict
-
 import requests
+from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException
+from typing import List, Dict
 
 app = FastAPI()
 
 def get_night_hours():
     return list(range(21, 24)) + list(range(0, 7))
+
+def get_moon_illumination(timestamp):
+    url = f"https://api.farmsense.net/v1/moonphases/?d={timestamp}"
+    resp = requests.get(url)
+    data = resp.json()
+    return data[0]["Illumination"]
 
 def fetch_weather_data(lat, lon, timezone):
     url = (
@@ -55,7 +60,7 @@ def parse_night_data(raw_data) -> List[Dict]:
             cloud = clouds[i]
             visibility = visibilities[i]
             windspeed = windspeeds[i]
-            windgust  = windgusts[i]
+            windgust = windgusts[i]
         except (IndexError, ValueError) as e:
             print(f"Data error for hour {hour_str}: {e}")
             continue
@@ -69,13 +74,18 @@ def parse_night_data(raw_data) -> List[Dict]:
                 "cloudcover": cloud,
                 "visibility": visibility,
                 "windspeed": windspeed,
-                "windgust": windgust
+                "windgust": windgust,
             })
-
-    return [
-        {"period": period, "hours": hours}
-        for period, hours in grouped.items() if hours
-    ]
+    result = []
+    for period, hours in grouped.items():
+        moon_hour = next((h for h in hours if h["hour"] == "01:00"), hours[0])
+        moon_illumination = get_moon_illumination(moon_hour["timestamp"])
+        result.append({
+            "period": period,
+            "moon_illumination": moon_illumination,
+            "hours": hours
+        })
+    return result
 
 @app.get("/forecast")
 def forecast(
@@ -84,8 +94,30 @@ def forecast(
     timezone: str = "Europe/Warsaw"
 ):
     try:
-        raw = fetch_weather_data(latitude, longitude, timezone)
-        night_data = parse_night_data(raw)
+        try:
+            raw = fetch_weather_data(latitude, longitude, timezone)
+        except Exception as e:
+            print(f"Error fetching weather data: {e}")
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "message": "Weather data unavailable. External weather API did not respond.",
+                    "error": str(e)
+                }
+            )
+
+        try:
+            night_data = parse_night_data(raw)
+        except Exception as e:
+            print(f"Error fetching moon phase or parsing night data: {e}")
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "message": "Night data unavailable. External moon phase API did not respond or data parsing failed.",
+                    "error": str(e)
+                }
+            )
+
         result = {
             "latitude": latitude,
             "longitude": longitude,
@@ -98,13 +130,15 @@ def forecast(
             "data": night_data
         }
         return result
-    except Exception as e:
-        print(f"Error fetching weather data: {e}")
 
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Internal server error: {e}")
         raise HTTPException(
-            status_code=503,
+            status_code=500,
             detail={
-                "message": "Weather data unavailable. External API did not respond.",
+                "message": "Internal server error.",
                 "error": str(e)
             }
         )
