@@ -9,9 +9,13 @@ AstroSpotFinder - just the essentials for planning stargazing sessions.
 
 - [Features](#features)
 - [How to run](#how-to-run)
+- [Docker (TODO)](#docker)
 - [Project status](#project-status)
 - [API - Request Parameters](#api-request-parameters)
 - [API Response Format](#api-response-format)
+- [Caching](#caching)
+- [Rate Limiting](#rate-limiting)
+- [Error Handling](#error-handling)
 - [Example Usage](#example-usage)
 - [How to test](#how-to-test)
 - [License](#license)
@@ -171,6 +175,29 @@ GET /forecast?latitude=50.06143&longitude=19.93658&timezone=Europe/Krakow
 
     - `windgust` - wind gust speed at 10 meters above ground (unit: m/s)
 
+## Caching
+
+- Weather data: cached for 1 hour per location.
+- Moon illumination: cached for 24 hours per night period.
+- First request may be slower (data fetched from external APIs), subsequent requests are instant (served from cache).
+
+## Rate Limiting
+
+To protect the API and external resources, requests to `/forecast` are limited to 20 per minute per IP (HTTP 429 on limit exceeded).
+
+## Error Handling
+
+- Returns `503` if external weather or moon phase API is unavailable.
+- Returns `422` for invalid input parameters (latitude, longitude).
+- All errors are returned as JSON with a clear message, for example:
+```json
+{
+  "detail": {
+    "message": "Weather data unavailable. External weather API did not respond.",
+    "error": "ConnectionError: ..."
+  }
+}
+```
 ## Example Usage
 
 ```bash
