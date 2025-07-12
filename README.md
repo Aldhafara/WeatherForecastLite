@@ -82,7 +82,7 @@ python src/weatherforecastlite/main.py
 |-----------|--------|---------------------------------------------------|--------------------|
 | latitude | float | Latitude for forecast location          | 52.232222 (Warsaw) |
 | longitude | float | Longitude for forecast location          | 21.008333 (Warsaw) |
-| timezone | string | Timezone (e.g. Europe/Warsaw, UTC, Europe/London) | Europe/Warsaw   |
+| timezone | string | Timezone (IANA tz database name, e.g. Europe/Warsaw, UTC, America/New_York). See [full list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) | Europe/Warsaw   |
 
 - **All parameters are optional.** If not provided, Warsaw and Europe/Warsaw timezone are used.
 
@@ -201,7 +201,7 @@ To protect the API and external resources, requests to `/forecast` are limited t
 ## Example Usage
 
 ```bash
-curl "http://localhost:8000/forecast?latitude=50.06143&longitude=19.93658&timezone=Europe/Krakow"
+curl "http://localhost:8000/forecast?latitude=50.06143&longitude=19.93658&timezone=Europe/Warsaw"
 ```
 
 ## How to test
