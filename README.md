@@ -9,8 +9,7 @@ AstroSpotFinder - just the essentials for planning stargazing sessions.
 
 - [Features](#features)
 - [How to run](#how-to-run)
-- [Docker (TODO)](#docker)
-- [Project status](#project-status)
+- [Docker](#docker)
 - [API - Request Parameters](#api-request-parameters)
 - [API Response Format](#api-response-format)
 - [Caching](#caching)
@@ -64,17 +63,25 @@ pip install -r requirements.txt
 python src/weatherforecastlite/main.py
 ```
 
-## Project status
+## Docker
 
-- [x] Initial skeleton
+1. Build the image:
 
-- [x] Basic weather fetcher
+```bash
+docker build -t weatherforecastlite .
+```
 
-- [x] Nighttime data parser
+2. Run the container:
 
-- [x] Simple API (Flask/FastAPI)
+```bash
+docker run -p 8000:8000 weatherforecastlite
+```
 
-- [x] Tests
+To run with live code reload (dev only), use:
+
+```bash
+docker run -p 8000:8000 -v $(pwd)/src:/app/src weatherforecastlite
+```
 
 ## API Request Parameters
 
