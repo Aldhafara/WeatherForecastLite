@@ -1,8 +1,10 @@
+from unittest.mock import patch
 from weatherforecastlite.main import parse_night_data, get_period
 
 from datetime import datetime
 
-def test_parse_night_data_minimal(capfd):
+@patch('weatherforecastlite.main.logger')
+def test_parse_night_data_minimal(mock_logger):
     sample = {
         "hourly": {
             "time": ["2025-07-11T21:00", "2025-07-11T22:00"],
@@ -11,9 +13,8 @@ def test_parse_night_data_minimal(capfd):
         }
     }
     result = parse_night_data(sample)
-    out, err = capfd.readouterr()
     assert result == []
-    assert "Data unavailable in external API: 'visibility'" in out
+    mock_logger.warning.assert_called_with("Data unavailable in external API: 'visibility'")
 
 def test_get_period():
     dt1 = datetime.fromisoformat("2025-07-11T22:00:00")
@@ -23,7 +24,8 @@ def test_get_period():
     assert get_period(dt2) == "2025-07-11/2025-07-12"
     assert get_period(dt3) == "2025-07-10/2025-07-11"
 
-def test_parse_night_data_full():
+@patch('weatherforecastlite.main.logger')
+def test_parse_night_data_full(mock_logger):
     sample = {
         "hourly": {
             "time": ["2025-07-11T21:00", "2025-07-11T22:00", "2025-07-11T23:00", "2025-07-12T00:00"],
@@ -41,12 +43,15 @@ def test_parse_night_data_full():
     assert result[0]["hours"][0]["hour"] == "21:00"
     assert "timestamp" in result[0]["hours"][0]
 
-def test_parse_night_data_missing_keys():
+@patch('weatherforecastlite.main.logger')
+def test_parse_night_data_missing_keys(mock_logger):
     sample = {"hourly": {"time": ["2025-07-11T21:00"]}}
     result = parse_night_data(sample)
     assert result == []
+    mock_logger.warning.assert_called()
 
-def test_parse_night_data_bad_data():
+@patch('weatherforecastlite.main.logger')
+def test_parse_night_data_bad_data(mock_logger):
     sample = {
         "hourly": {
             "time": ["2025-07-11T21:00", "bad-time"],
@@ -60,8 +65,10 @@ def test_parse_night_data_bad_data():
     result = parse_night_data(sample)
     assert len(result) == 1
     assert len(result[0]["hours"]) == 1
+    assert mock_logger.error.call_count >= 1
 
-def test_parse_night_data_data_error_message(capfd):
+@patch('weatherforecastlite.main.logger')
+def test_parse_night_data_data_error_message(mock_logger):
     sample = {
         "hourly": {
             "time": ["2025-07-11T21:00", "bad-time"],
@@ -73,11 +80,12 @@ def test_parse_night_data_data_error_message(capfd):
         }
     }
     result = parse_night_data(sample)
-    out, err = capfd.readouterr()
     assert len(result) == 1
-    assert "Data error for hour bad-time:" in out
+    error_logs = [call[0][0] for call in mock_logger.error.call_args_list]
+    assert any("Data error for hour bad-time:" in msg for msg in error_logs)
 
-def test_parse_night_data_empty_lists():
+@patch('weatherforecastlite.main.logger')
+def test_parse_night_data_empty_lists(mock_logger):
     sample = {
         "hourly": {
             "time": [],
