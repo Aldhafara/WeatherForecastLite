@@ -1,5 +1,7 @@
 from unittest.mock import patch
-from weatherforecastlite.main import parse_night_data, get_period
+from weatherforecastlite.main import parse_night_data
+from weatherforecastlite.utils import get_period
+from datetime import datetime
 
 from datetime import datetime
 
