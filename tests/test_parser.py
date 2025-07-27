@@ -26,8 +26,9 @@ def test_get_period():
     assert get_period(dt2) == "2025-07-11/2025-07-12"
     assert get_period(dt3) == "2025-07-10/2025-07-11"
 
+@patch('weatherforecastlite.external.get_moon_illumination', return_value=0.5)
 @patch('weatherforecastlite.main.logger')
-def test_parse_night_data_full(mock_logger):
+def test_parse_night_data_full(mock_logger, mock_get_moon_illumination):
     sample = {
         "hourly": {
             "time": ["2025-07-11T21:00", "2025-07-11T22:00", "2025-07-11T23:00", "2025-07-12T00:00"],
@@ -52,8 +53,9 @@ def test_parse_night_data_missing_keys(mock_logger):
     assert result == []
     mock_logger.warning.assert_called()
 
+@patch('weatherforecastlite.external.get_moon_illumination', return_value=0.5)
 @patch('weatherforecastlite.main.logger')
-def test_parse_night_data_bad_data(mock_logger):
+def test_parse_night_data_bad_data(mock_logger, mock_get_moon_illumination):
     sample = {
         "hourly": {
             "time": ["2025-07-11T21:00", "bad-time"],
@@ -69,8 +71,9 @@ def test_parse_night_data_bad_data(mock_logger):
     assert len(result[0]["hours"]) == 1
     assert mock_logger.error.call_count >= 1
 
+@patch('weatherforecastlite.external.get_moon_illumination', return_value=0.5)
 @patch('weatherforecastlite.main.logger')
-def test_parse_night_data_data_error_message(mock_logger):
+def test_parse_night_data_data_error_message(mock_logger, mock_get_moon_illumination):
     sample = {
         "hourly": {
             "time": ["2025-07-11T21:00", "bad-time"],

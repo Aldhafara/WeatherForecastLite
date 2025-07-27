@@ -30,10 +30,12 @@ MOCK_WEATHER_RESPONSE = {
 
 client = TestClient(app, raise_server_exceptions=False)
 
+@patch("weatherforecastlite.external.get_moon_illumination")
 @patch("weatherforecastlite.main.fetch_weather_data")
-def test_forecast_endpoint(mock_fetch):
+def test_forecast_endpoint(mock_fetch, mock_moon):
     mock_response = MOCK_WEATHER_RESPONSE
     mock_fetch.return_value = mock_response
+    mock_moon.return_value = 0.5
 
     response = client.get("/forecast")
     assert response.status_code == 200
