@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 weather_cache = TTLCache(maxsize=128, ttl=3600)  # 1h
 moon_phase_cache = TTLCache(maxsize=128, ttl=86400)  # 24h
+moon_phase_protocol_cache = TTLCache(maxsize=1, ttl=600)  # 10 min
 
 def log_cache(cache, name="cache"):
     def decorator(func):
@@ -21,6 +22,19 @@ def log_cache(cache, name="cache"):
             return func(*args, **kwargs)
         return wrapper
     return decorator
+
+def get_moon_api_protocol():
+    return moon_phase_protocol_cache.get("proto", "https")
+
+def set_moon_api_protocol(proto):
+    moon_phase_protocol_cache["proto"] = proto
+
+def fetch_moon_phase_data(timestamp, protocol):
+    url = f"{protocol}://api.farmsense.net/v1/moonphases/?d={timestamp}"
+    resp = requests.get(url, timeout=5)
+    resp.raise_for_status()
+    data = resp.json()
+    return data
 
 @log_cache(moon_phase_cache, name="moon_illumination")
 @cached(moon_phase_cache)
@@ -39,16 +53,25 @@ def get_moon_illumination(
     if ts > now + 10 * 365 * 24 * 3600:
         logger.warning(f"Timestamp out of reasonable range: {timestamp}")
         raise ValueError(f"Timestamp out of reasonable range: {timestamp}")
+
+    protocol = get_moon_api_protocol()
     try:
-        url = f"https://api.farmsense.net/v1/moonphases/?d={timestamp}"
-        start = time.time()
-        resp = requests.get(url)
-        duration = time.time() - start
-        logger.info(f"FarmSense API call took {duration:.3f}s")
-        data = resp.json()
+        data = fetch_moon_phase_data(timestamp, protocol)
         return data[0]["Illumination"]
+    except requests.exceptions.SSLError as ssl_exc:
+        if protocol == "https":
+            logger.warning("Moonphases API SSL error – switching to HTTP")
+            set_moon_api_protocol("http")
+            try:
+                data = fetch_moon_phase_data(timestamp, "http")
+                return data[0]["Illumination"]
+            except Exception as e2:
+                logger.error(f"Moonphases API HTTP fetch fail with SSL: {e2}")
+                raise
+        logger.error(f"Moonphases API SSL error with HTTP – something is seriously wrong: {ssl_exc}")
+        raise
     except Exception as e:
-        logger.error(f"Error fetching moon illumination for {timestamp}: {e}")
+        logger.error(f"Error fetching moon illumination: {e}")
         raise
 
 @log_cache(weather_cache, name="weather_cache")

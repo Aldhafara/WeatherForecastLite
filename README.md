@@ -24,6 +24,9 @@ Minimalist service for fetching nighttime cloud cover and temperature forecasts.
 - Fetches cloud cover (%) and temperature for nighttime hours
 - Fast, simple API
 - Easy to extend - no feature bloat
+- Due to occasional SSL certificate issues with the FarmSense API, a smart fallback mechanism was added.
+- Requests try HTTPS by default, but on SSL errors the system automatically switches to HTTP for a 10-minute cache duration.
+- This improves reliability and reduces potential downtime caused by external SSL problems.
 
 ## How to run
 
