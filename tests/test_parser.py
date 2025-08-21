@@ -14,7 +14,7 @@ def test_parse_night_data_minimal(mock_logger):
             "temperature_2m": [15.0, 14.5]
         }
     }
-    result = parse_night_data(sample)
+    result = parse_night_data(sample, True)
     assert result == []
     mock_logger.warning.assert_called_with("Data unavailable in external API: 'visibility'")
 
@@ -39,7 +39,7 @@ def test_parse_night_data_full(mock_logger, mock_get_moon_illumination):
             "windgusts_10m":[8.9, 9.2, 8.0, 7.5]
         }
     }
-    result = parse_night_data(sample)
+    result = parse_night_data(sample, True)
     assert len(result) == 1
     assert result[0]["period"] == "2025-07-11/2025-07-12"
     assert len(result[0]["hours"]) == 4
@@ -49,7 +49,7 @@ def test_parse_night_data_full(mock_logger, mock_get_moon_illumination):
 @patch('weatherforecastlite.main.logger')
 def test_parse_night_data_missing_keys(mock_logger):
     sample = {"hourly": {"time": ["2025-07-11T21:00"]}}
-    result = parse_night_data(sample)
+    result = parse_night_data(sample, True)
     assert result == []
     mock_logger.warning.assert_called()
 
@@ -66,7 +66,7 @@ def test_parse_night_data_bad_data(mock_logger, mock_get_moon_illumination):
             "windgusts_10m":[8.9, 9.2]
         }
     }
-    result = parse_night_data(sample)
+    result = parse_night_data(sample, True)
     assert len(result) == 1
     assert len(result[0]["hours"]) == 1
     assert mock_logger.error.call_count >= 1
@@ -84,7 +84,7 @@ def test_parse_night_data_data_error_message(mock_logger, mock_get_moon_illumina
             "windgusts_10m":[8.9, 9.2]
         }
     }
-    result = parse_night_data(sample)
+    result = parse_night_data(sample, True)
     assert len(result) == 1
     error_logs = [call[0][0] for call in mock_logger.error.call_args_list]
     assert any("Data error for hour bad-time:" in msg for msg in error_logs)
@@ -101,5 +101,5 @@ def test_parse_night_data_empty_lists(mock_logger):
             "windgusts_10m": []
         }
     }
-    result = parse_night_data(sample)
+    result = parse_night_data(sample, True)
     assert result == []

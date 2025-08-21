@@ -19,7 +19,7 @@ async def log_request_time(request: Request, call_next):
     logger.info(f"{request.method} {request.url.path} took {duration:.3f}s")
     return response
 
-def parse_night_data(raw_data) -> List[Dict]:
+def parse_night_data(raw_data, with_moon_info: bool) -> List[Dict]:
     try:
         hours = raw_data["hourly"]["time"]
         clouds = raw_data["hourly"]["cloudcover"]
@@ -56,19 +56,28 @@ def parse_night_data(raw_data) -> List[Dict]:
                 "windgust": windgust,
             })
     result = []
-    moon_timestamps = []
-    periods = []
-    for period, hours in grouped.items():
-        moon_hour = next((h for h in hours if h["hour"] == "01:00"), hours[0])
-        moon_timestamps.append(moon_hour["timestamp"])
-        periods.append((period, hours))
-    moon_illuminations = batch_get_moon_illumination(moon_timestamps)
-    for (period, hours), moon_illumination in zip(periods, moon_illuminations):
-        result.append({
-            "period": period,
-            "moon_illumination": moon_illumination,
-            "hours": hours
-        })
+    if with_moon_info:
+        moon_timestamps = []
+        periods = []
+        for period, hours in grouped.items():
+            moon_hour = next((h for h in hours if h["hour"] == "01:00"), hours[0])
+            moon_timestamps.append(moon_hour["timestamp"])
+            periods.append((period, hours))
+
+        moon_illuminations = batch_get_moon_illumination(moon_timestamps)
+        for (period, hours), moon_illumination in zip(periods, moon_illuminations):
+            result.append({
+                "period": period,
+                "moon_illumination": moon_illumination,
+                "hours": hours
+            })
+    else:
+        for period, hours in grouped.items():
+            result.append({
+                "period": period,
+                "hours": hours
+            })
+
     return result
 
 @app.get("/forecast")
@@ -77,7 +86,8 @@ def forecast(
     request: Request,
     latitude: float = Query(52.232222, ge=-90, le=90, description="Latitude (-90 to 90)"),
     longitude: float = Query(21.008333, ge=-180, le=180, description="Longitude (-180 to 180)"),
-    timezone: str = Query("Europe/Warsaw", description="Timezone, e.g. Europe/Warsaw")
+    timezone: str = Query("Europe/Warsaw", description="Timezone, e.g. Europe/Warsaw"),
+    moon_info: bool = Query(False, description="Include moon illumination info (default: false)")
 ):
     try:
         try:
@@ -93,7 +103,7 @@ def forecast(
             )
 
         try:
-            night_data = parse_night_data(raw)
+            night_data = parse_night_data(raw, moon_info)
         except Exception as e:
             logger.error(f"Error fetching moon phase or parsing night data: {e}")
             raise HTTPException(

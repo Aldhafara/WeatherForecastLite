@@ -88,11 +88,12 @@ docker run -p 8000:8000 -v $(pwd)/src:/app/src weatherforecastlite
 
 ## API Request Parameters
 
-| Parameter | Type  | Description                    | Default      |
-|-----------|--------|---------------------------------------------------|--------------------|
-| latitude | float | Latitude for forecast location          | 52.232222 (Warsaw) |
-| longitude | float | Longitude for forecast location          | 21.008333 (Warsaw) |
-| timezone | string | Timezone (IANA tz database name, e.g. Europe/Warsaw, UTC, America/New_York). See [full list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) | Europe/Warsaw   |
+| Parameter | Type    | Description                                                                                       | Default            |
+|-----------|---------|---------------------------------------------------------------------------------------------------|--------------------|
+| latitude  | float   | Latitude for forecast location                                                                    | 52.232222 (Warsaw) |
+| longitude | float   | Longitude for forecast location                                                                   | 21.008333 (Warsaw) |
+| timezone  | string  | Timezone (IANA tz database name, e.g. Europe/Warsaw, UTC, America/New_York). See [full list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) | Europe/Warsaw      |
+| moon_info | boolean | Include moon illumination data in the forecast. Optional; defaults to false.                      | False              |
 
 - **All parameters are optional.** If not provided, Warsaw and Europe/Warsaw timezone are used.
 
@@ -101,6 +102,7 @@ docker run -p 8000:8000 -v $(pwd)/src:/app/src weatherforecastlite
 ```
 GET /forecast
 GET /forecast?latitude=50.06143&longitude=19.93658&timezone=Europe/Krakow
+GET /forecast?latitude=50.06143&longitude=19.93658&timezone=Europe/Krakow&moon_info=true
 ```
 
 ## API Response Format

@@ -57,7 +57,7 @@ def test_forecast_endpoint_error(mock_fetch):
 @patch("weatherforecastlite.main.fetch_weather_data")
 def test_forecast_moon_api_error(mock_fetch, mock_moon):
     mock_fetch.return_value = MOCK_WEATHER_RESPONSE
-    response = client.get("/forecast")
+    response = client.get("/forecast?moon_info=true")
     assert response.status_code == 503
     data = response.json()
     assert data["detail"]["message"] == "Night data unavailable. External moon phase API did not respond or data parsing failed."
